@@ -78,6 +78,51 @@ def summary(
 
 
 @app.command()
+def diagnose(patch: str | None = typer.Option(None)) -> None:
+    """Explain validation warnings with raw evidence. / 用原始数据解释校验警告。
+
+    Lists: champions with null stats, champions with zero ability variables,
+    cost distribution incl. non-shop units, and a sample raw champion record so
+    schema drift (Unreal-era cdragon) is visible.
+    """
+    cfg = load_config()
+    patch = patch or cfg.set.patch
+    lang = cfg.static.languages[0]
+    raw = cdragon.load_raw(lang, patch)
+    sd = cdragon.select_set(raw, cfg.set.id)
+    b = build_bundle({lang: raw}, cfg.set.id, patch, primary_lang=lang)
+
+    champs = b.champions
+    rprint(f"[bold]set entry:[/] number={sd.get('number')} mutator={sd.get('mutator')!r} "
+           f"name={sd.get('name')!r}; keys={sorted(sd.keys())}")
+
+    rprint("\n[bold]cost distribution (incl. non-shop units) / 费用分布:[/]")
+    rprint(champs.group_by("cost").agg(pl.col("api_name")).sort("cost"))
+
+    null_stats = champs.filter(pl.any_horizontal([pl.col(f"stat_{k}").is_null()
+                                                 for k in ("hp", "damage", "attackSpeed")]))
+    rprint(f"\n[bold]champions with null core stats ({null_stats.height}):[/]")
+    rprint(null_stats.select("api_name", "cost", "traits").to_dicts())
+
+    with_vars = set(b.ability_vars["api_name"].unique().to_list()) if b.ability_vars.height else set()
+    no_vars = [a for a in champs["api_name"].to_list() if a not in with_vars]
+    rprint(f"\n[bold]champions with ZERO ability variables ({len(no_vars)}/{champs.height}):[/]")
+    rprint(no_vars)
+
+    # raw record for a shop champion so we can see the real schema
+    sample = next((c for c in sd.get("champions", [])
+                   if c.get("cost") in (1, 2, 3, 4, 5) and c.get("traits")), None)
+    if sample:
+        rprint(f"\n[bold]raw record sample ({sample.get('apiName')}) top-level keys:[/] "
+               f"{sorted(sample.keys())}")
+        rprint("[bold]ability keys:[/]", sorted((sample.get("ability") or {}).keys()))
+        rprint("[bold]ability record:[/]")
+        rprint(sample.get("ability"))
+        rprint("[bold]stats record:[/]")
+        rprint(sample.get("stats"))
+
+
+@app.command()
 def champion(api_name: str, patch: str | None = typer.Option(None)) -> None:
     """Show one champion's stats + ability variables. / 查看单个棋子。"""
     cfg = load_config()
