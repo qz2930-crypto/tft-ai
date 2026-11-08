@@ -104,7 +104,9 @@ def diagnose(patch: str | None = typer.Option(None)) -> None:
     rprint(f"\n[bold]champions with null core stats ({null_stats.height}):[/]")
     rprint(null_stats.select("api_name", "cost", "traits").to_dicts())
 
-    with_vars = set(b.ability_vars["api_name"].unique().to_list()) if b.ability_vars.height else set()
+    with_vars: set[str] = set()
+    if b.ability_vars.height:
+        with_vars = set(b.ability_vars["api_name"].unique().to_list())
     no_vars = [a for a in champs["api_name"].to_list() if a not in with_vars]
     rprint(f"\n[bold]champions with ZERO ability variables ({len(no_vars)}/{champs.height}):[/]")
     rprint(no_vars)
