@@ -7,6 +7,7 @@ from ``config.yaml``. Both are resolved relative to the repository root.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -28,11 +29,31 @@ class Secrets(BaseSettings):
     riot_region: str = Field(default="americas", alias="RIOT_REGION")
 
 
+class PatchWindow(BaseModel):
+    tag: str
+    start: datetime
+
+
 class SetConfig(BaseModel):
     id: int
     name: str
     name_zh: str
     patch: str
+    patches: list[PatchWindow] = []
+
+    def patch_for(self, game_datetime_ms: int) -> str | None:
+        """Infer patch tag from match timestamp. / 由对局时间推断版本号。
+
+        Returns the latest patch whose ``start`` <= game time, or ``None`` if the
+        match predates the first known patch.
+        """
+        ts = datetime.fromtimestamp(game_datetime_ms / 1000, tz=UTC)
+        tag: str | None = None
+        for w in sorted(self.patches, key=lambda w: w.start):
+            start = w.start if w.start.tzinfo else w.start.replace(tzinfo=UTC)
+            if start <= ts:
+                tag = w.tag
+        return tag
 
 
 class RateLimit(BaseModel):
