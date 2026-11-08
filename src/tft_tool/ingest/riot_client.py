@@ -118,6 +118,19 @@ class RiotClient:
         ]
         return self._get(f"{self._platform_base}/tft/league/v1/{tier_path}", {"queue": queue})
 
+    def entries(
+        self, tier: str, division: str, page: int = 1, queue: str = "RANKED_TFT"
+    ) -> list[dict[str, Any]]:
+        """Paged entries for DIAMOND..IRON / I..IV. / 钻石及以下分页榜单。"""
+        return self._get(
+            f"{self._platform_base}/tft/league/v1/entries/{tier.upper()}/{division.upper()}",
+            {"queue": queue, "page": page},
+        )
+
+    def league_by_puuid(self, puuid: str) -> list[dict[str, Any]]:
+        """All-queue league entries for one player (tier/rank/LP). / 单个玩家段位信息。"""
+        return self._get(f"{self._platform_base}/tft/league/v1/by-puuid/{puuid}")
+
     # ---- tft-match-v1 ----------------------------------------------------
 
     def match_ids(self, puuid: str, count: int = 20, start: int = 0) -> list[str]:
