@@ -1,0 +1,36 @@
+# Secrets / 密钥
+.env
+*.key
+
+# Data / 数据（原始与处理后数据不入库，只保留目录占位）
+data/raw/*
+data/processed/*
+data/results/*
+data/static/*
+!data/**/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.uv/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Notebooks / IDE
+.ipynb_checkpoints/
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Web
+web/node_modules/
+web/.next/
+web/dist/

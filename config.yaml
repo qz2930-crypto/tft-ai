@@ -1,0 +1,41 @@
+# Project configuration (non-secret). Secrets live in .env.
+# 项目配置（非敏感）。密钥放在 .env。
+
+set:
+  id: 18                      # Current set / 当前赛季
+  name: "Enchanted Wilds"
+  name_zh: "魔法荒野"
+  patch: "18.6"               # Target patch for collection / 目标采集版本
+  # Riot game_version strings look like "Version 18.6.xxx"; we match on major.minor
+  # 对局数据里的 game_version 形如 "Version 18.6.xxx"，按 major.minor 匹配
+
+ingest:
+  tiers: ["CHALLENGER", "GRANDMASTER"]   # 决策⑦：宗师 + 王者
+  queue: "RANKED_TFT"
+  queue_id: 1100
+  matches_per_player: 40      # match ids to fetch per player / 每位玩家拉取的对局数
+  target_matches: 30000       # Per-patch target / 每版本目标局数
+  rate_limit:                 # Dev key defaults / 开发 key 默认限速
+    per_second: 20
+    per_two_minutes: 100
+
+static:
+  cdragon_base: "https://raw.communitydragon.org"
+  cdragon_branch: "latest"    # or "pbe"
+  languages: ["en_us", "zh_cn"]
+
+analysis:
+  # M6 metrics defaults — see docs/03-metrics.md / 指标默认值，见 docs/03-metrics.md
+  shrinkage_k: 30
+  min_n_display: 50
+  min_n_reliable: 200
+  placement_sigma_default: 2.29
+  level_buckets: [[1, 7], [8, 8], [9, 10]]
+  stage_buckets: ["2", "3", "4", "5", "6+"]
+  rank_weight: false          # 决策④：段位加权默认关闭
+
+paths:
+  raw: "data/raw"
+  processed: "data/processed"
+  results: "data/results"
+  static: "data/static"
