@@ -8,8 +8,12 @@ import polars as pl
 from tft_tool.common.settings import load_config
 
 
-def _q(con: duckdb.DuckDBPyConnection, sql: str) -> pl.DataFrame:
-    return con.execute(sql).pl()
+def query_df(con: duckdb.DuckDBPyConnection, sql: str) -> pl.DataFrame:
+    """Run SQL and return a polars frame without going through pyarrow.
+    执行 SQL 并返回 polars 表；不经由 pyarrow（duckdb 2.x 的 ``.pl()`` 需要它）。
+    """
+    rel = con.sql(sql)
+    return pl.DataFrame(rel.fetchall(), schema=rel.columns, orient="row")
 
 
 def report(patch: str | None = None) -> dict[str, pl.DataFrame]:
@@ -19,7 +23,7 @@ def report(patch: str | None = None) -> dict[str, pl.DataFrame]:
     where = f"WHERE patch = '{patch}'" if patch else ""
     out: dict[str, pl.DataFrame] = {}
 
-    out["counts"] = _q(
+    out["counts"] = query_df(
         con,
         f"""
         SELECT patch,
@@ -32,7 +36,7 @@ def report(patch: str | None = None) -> dict[str, pl.DataFrame]:
         """,
     )
     # each match must have placements 1..8 exactly once / 每局名次应为 1–8 各一次
-    out["bad_placement_matches"] = _q(
+    out["bad_placement_matches"] = query_df(
         con,
         f"""
         SELECT match_id, COUNT(*) AS n, COUNT(DISTINCT placement) AS distinct_pl,
@@ -43,7 +47,7 @@ def report(patch: str | None = None) -> dict[str, pl.DataFrame]:
         LIMIT 20
         """,
     )
-    out["stage_distribution"] = _q(
+    out["stage_distribution"] = query_df(
         con,
         f"""
         SELECT stage, COUNT(*) AS eliminated_here,
@@ -51,26 +55,26 @@ def report(patch: str | None = None) -> dict[str, pl.DataFrame]:
         FROM participants {where} GROUP BY stage ORDER BY stage
         """,
     )
-    out["units_per_level"] = _q(
+    out["units_per_level"] = query_df(
         con,
         f"""
         SELECT level, COUNT(*) AS n, ROUND(AVG(n_units), 2) AS avg_units
         FROM participants {where} GROUP BY level ORDER BY level
         """,
     )
-    out["top_units"] = _q(
+    out["top_units"] = query_df(
         con,
         f"""
         SELECT character_id, COUNT(*) AS n, ROUND(AVG(tier), 2) AS avg_star
         FROM units {where} GROUP BY character_id ORDER BY n DESC LIMIT 15
         """,
     )
-    out["top_items"] = _q(
+    out["top_items"] = query_df(
         con,
         f"SELECT item, COUNT(*) AS n FROM unit_items {where} "
         "GROUP BY item ORDER BY n DESC LIMIT 15",
     )
-    out["trait_styles"] = _q(
+    out["trait_styles"] = query_df(
         con,
         f"SELECT style, COUNT(*) AS n FROM traits {where} GROUP BY style ORDER BY style",
     )

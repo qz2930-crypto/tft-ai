@@ -9,7 +9,7 @@ from rich import print as rprint
 
 from tft_tool.common.settings import load_config
 from tft_tool.etl.build import available_patches, build_patch, refresh_duckdb
-from tft_tool.etl.quality import report
+from tft_tool.etl.quality import query_df, report
 
 app = typer.Typer(no_args_is_help=True)
 
@@ -52,5 +52,5 @@ def sql(query: str) -> None:
 
     cfg = load_config()
     con = duckdb.connect(str(cfg.paths.resolve("processed") / "tft.duckdb"), read_only=True)
-    rprint(con.execute(query).pl())
+    rprint(query_df(con, query))
     con.close()
