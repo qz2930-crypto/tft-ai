@@ -69,6 +69,12 @@ def _register_subapps() -> None:
         app.add_typer(etl_app, name="etl", help="Raw JSON → DuckDB (M3) / 清洗建表")
     except ImportError:
         pass
+    try:
+        from tft_tool.stats.cli import app as stats_app
+
+        app.add_typer(stats_app, name="stats", help="Metrics (M4) / 统计分析")
+    except ImportError:
+        pass
 
 
 _register_subapps()
