@@ -91,11 +91,37 @@ class IngestIndex:
         self.conn.commit()
         return cur.rowcount if cur.rowcount is not None else 0
 
-    def pending(self, limit: int | None = None) -> list[str]:
-        q = "SELECT match_id FROM match_index WHERE status='pending' ORDER BY discovered_at"
-        if limit:
-            q += f" LIMIT {int(limit)}"
-        return [r[0] for r in self.conn.execute(q)]
+    @staticmethod
+    def _id_num(match_id: str) -> int:
+        """Numeric part of 'NA1_5676033029' (monotonic ≈ game time). / 对局 ID 数字部分。"""
+        try:
+            return int(match_id.split("_", 1)[1])
+        except (IndexError, ValueError):
+            return 0
+
+    def pending(self, limit: int | None = None, newest_first: bool = True) -> list[str]:
+        ids = [r[0] for r in self.conn.execute(
+            "SELECT match_id FROM match_index WHERE status='pending'")]
+        ids.sort(key=self._id_num, reverse=newest_first)
+        return ids[:limit] if limit else ids
+
+    def min_done_id(self, patch: str) -> int | None:
+        """Smallest numeric id among done matches of a patch. / 某版本已下载对局的最小 ID。"""
+        rows = self.conn.execute(
+            "SELECT match_id FROM match_index WHERE status='done' AND patch=?", (patch,)
+        ).fetchall()
+        nums = [self._id_num(r[0]) for r in rows]
+        return min(nums) if nums else None
+
+    def prune_pending_before(self, threshold: int, reason: str) -> int:
+        """Mark pending ids numerically below threshold as skipped. / 清理旧 pending。"""
+        ids = [m for m in self.pending(newest_first=False) if self._id_num(m) < threshold]
+        self.conn.executemany(
+            "UPDATE match_index SET status='skipped', error=?, fetched_at=? WHERE match_id=?",
+            [(reason, time.time(), m) for m in ids],
+        )
+        self.conn.commit()
+        return len(ids)
 
     def mark(
         self,

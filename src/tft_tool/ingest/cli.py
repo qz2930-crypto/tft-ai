@@ -52,6 +52,27 @@ def run(limit: int | None = typer.Option(None, help="max matches this run")) -> 
 
 
 @app.command()
+def prune(
+    before_patch: str = typer.Option(..., help="drop pending ids older than this patch's data"),
+    dry_run: bool = typer.Option(False),
+) -> None:
+    """Skip pending ids that predate a patch (uses smallest downloaded id of that patch).
+    清理早于某版本的待下载 ID（以该版本已下载的最小 ID 为界）。"""
+    idx = IngestIndex()
+    thr = idx.min_done_id(before_patch)
+    if thr is None:
+        rprint(f"[red]no done matches for patch {before_patch}; download some first[/]")
+        raise typer.Exit(1)
+    if dry_run:
+        n = sum(1 for m in idx.pending() if idx._id_num(m) < thr)
+        rprint(f"would prune {n} pending ids below {thr}")
+    else:
+        n = idx.prune_pending_before(thr, f"pruned: before {before_patch}")
+        rprint(f"[green]✓[/] pruned {n} pending ids below {thr}")
+    idx.close()
+
+
+@app.command()
 def status() -> None:
     """Show index counts. / 查看采集进度。"""
     idx = IngestIndex()

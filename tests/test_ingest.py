@@ -30,10 +30,21 @@ def test_index_roundtrip(tmp_path: Path) -> None:
     assert idx.upsert_players([{"puuid": "p1", "leaguePoints": 950}], "na1") == 1  # update
     assert idx.n_players() == 2
     assert idx.add_match_ids(["NA1_1", "NA1_2", "NA1_1"]) == 2
-    assert idx.pending() == ["NA1_1", "NA1_2"]
+    assert idx.pending() == ["NA1_2", "NA1_1"]  # newest (largest id) first
+    assert idx.pending(newest_first=False) == ["NA1_1", "NA1_2"]
     idx.mark("NA1_1", "done", set_number=18, patch="18.6", game_datetime=1, queue_id=1100)
     idx.mark("NA1_2", "skipped", error="queue_id=1130")
     assert idx.pending() == []
     assert idx.status_counts() == {"done": 1, "skipped": 1}
     assert idx.patch_counts() == {"18.6": 1}
+    idx.close()
+
+
+def test_prune_pending_before(tmp_path: Path) -> None:
+    idx = IngestIndex(tmp_path / "ix.sqlite")
+    idx.add_match_ids(["NA1_100", "NA1_200", "NA1_300"])
+    idx.mark("NA1_200", "done", patch="18.6")
+    assert idx.min_done_id("18.6") == 200
+    assert idx.prune_pending_before(200, "pruned") == 1
+    assert idx.pending() == ["NA1_300"]
     idx.close()
