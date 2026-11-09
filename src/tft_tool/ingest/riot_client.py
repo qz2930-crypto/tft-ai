@@ -133,10 +133,22 @@ class RiotClient:
 
     # ---- tft-match-v1 ----------------------------------------------------
 
-    def match_ids(self, puuid: str, count: int = 20, start: int = 0) -> list[str]:
+    def match_ids(
+        self,
+        puuid: str,
+        count: int = 20,
+        start: int = 0,
+        start_time: int | None = None,
+        end_time: int | None = None,
+    ) -> list[str]:
+        """Recent match ids; ``start_time``/``end_time`` are epoch seconds. / 时间为秒级时间戳。"""
+        params: dict[str, Any] = {"count": count, "start": start}
+        if start_time is not None:
+            params["startTime"] = start_time
+        if end_time is not None:
+            params["endTime"] = end_time
         return self._get(
-            f"{self._region_base}/tft/match/v1/matches/by-puuid/{puuid}/ids",
-            {"count": count, "start": start},
+            f"{self._region_base}/tft/match/v1/matches/by-puuid/{puuid}/ids", params
         )
 
     def match(self, match_id: str) -> dict[str, Any]:

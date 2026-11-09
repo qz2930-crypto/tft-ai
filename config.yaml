@@ -10,19 +10,21 @@ set:
   # Unreal era, so patch is inferred from `tft_set_number` + `game_datetime` against
   # this calendar (UTC). Add a row when a new patch ships.
   # 注意：虚幻版 game_version 为占位符，版本由 tft_set_number + 对局时间 对照下表推断（UTC）。
-  patches:
-    - { tag: "18.1", start: "2026-08-26T00:00:00Z" }
-    - { tag: "18.2", start: "2026-09-10T00:00:00Z" }
-    - { tag: "18.3", start: "2026-09-23T00:00:00Z" }   # approx — verify / 待核对
-    - { tag: "18.4", start: "2026-10-07T00:00:00Z" }   # approx — verify / 待核对
-    - { tag: "18.5", start: "2026-10-21T00:00:00Z" }   # approx — verify / 待核对
-    - { tag: "18.6", start: "2026-11-04T00:00:00Z" }
+  patches:                    # verified against official schedule (US Pacific deploy ≈ 18:00 UTC)
+    - { tag: "18.1", start: "2026-08-26T18:00:00Z" }
+    - { tag: "18.2", start: "2026-09-10T18:00:00Z" }
+    - { tag: "18.3", start: "2026-09-23T18:00:00Z" }
+    - { tag: "18.4", start: "2026-10-07T18:00:00Z" }
+    - { tag: "18.5", start: "2026-10-21T18:00:00Z" }
+    - { tag: "18.6", start: "2026-11-04T18:00:00Z" }   # 18.6B (2026-11-11) is a B-patch, same tag
+    # - { tag: "19.1", start: "2026-12-01T18:00:00Z" }  # Set 19 — enable when set.id becomes 19
 
 ingest:
   tiers: ["CHALLENGER", "GRANDMASTER"]   # 决策⑦：宗师 + 王者
   queue: "RANKED_TFT"
   queue_id: 1100
   matches_per_player: 40      # match ids to fetch per player / 每位玩家拉取的对局数
+  since_patch: "18.6"         # only collect ids newer than this patch start (null = all) / 只收该版本之后的对局
   target_matches: 30000       # Per-patch target / 每版本目标局数
   rate_limit:                 # Dev key defaults / 开发 key 默认限速
     per_second: 20

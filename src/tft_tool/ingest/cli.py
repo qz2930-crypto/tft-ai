@@ -28,9 +28,12 @@ def players() -> None:
 
 
 @app.command()
-def ids(per_player: int | None = typer.Option(None, help="match ids per player")) -> None:
+def ids(
+    per_player: int | None = typer.Option(None, help="match ids per player"),
+    since_patch: str | None = typer.Option(None, help="only ids after this patch start"),
+) -> None:
     """Stage 2: players → match id pool. / 收集对局 ID。"""
-    n = Collector().collect_match_ids(per_player)
+    n = Collector().collect_match_ids(per_player, since_patch)
     rprint(f"[green]✓[/] new match ids: {n}")
 
 

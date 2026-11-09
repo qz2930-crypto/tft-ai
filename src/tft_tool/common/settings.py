@@ -41,6 +41,13 @@ class SetConfig(BaseModel):
     patch: str
     patches: list[PatchWindow] = []
 
+    def patch_start(self, tag: str) -> datetime | None:
+        """UTC start of a patch tag. / 版本起始时间。"""
+        for w in self.patches:
+            if w.tag == tag:
+                return w.start if w.start.tzinfo else w.start.replace(tzinfo=UTC)
+        return None
+
     def patch_for(self, game_datetime_ms: int) -> str | None:
         """Infer patch tag from match timestamp. / 由对局时间推断版本号。
 
@@ -66,6 +73,7 @@ class IngestConfig(BaseModel):
     queue: str = "RANKED_TFT"
     queue_id: int = 1100
     matches_per_player: int = 40
+    since_patch: str | None = None
     target_matches: int = 30000
     rate_limit: RateLimit = RateLimit()
 

@@ -53,15 +53,30 @@ class Collector:
         return total
 
     # ---- stage 2 ---------------------------------------------------------
-    def collect_match_ids(self, per_player: int | None = None) -> int:
+    def collect_match_ids(
+        self, per_player: int | None = None, since_patch: str | None = None
+    ) -> int:
+        """Stage 2. ``since_patch`` (default from config) restricts ids to matches played
+        after that patch's start — avoids filling the pool with old-patch games.
+        以版本起始时间作为下限，避免 ID 池被旧版本对局占满。"""
         per_player = per_player or self.cfg.ingest.matches_per_player
+        since_patch = since_patch or self.cfg.ingest.since_patch
+        start_time: int | None = None
+        if since_patch:
+            st = self.cfg.set.patch_start(since_patch)
+            if st is None:
+                raise ValueError(f"unknown patch tag {since_patch!r} in set.patches")
+            start_time = int(st.timestamp())
+            log.info("match ids since patch %s (%s)", since_patch, st.isoformat())
         puuids = self.index.puuids()
         added = 0
         with Progress() as prog:
             task = prog.add_task("match ids", total=len(puuids))
             for puuid in puuids:
                 try:
-                    ids = self.client.match_ids(puuid, count=min(per_player, 200))
+                    ids = self.client.match_ids(
+                        puuid, count=min(per_player, 200), start_time=start_time
+                    )
                     added += self.index.add_match_ids(ids)
                 except RiotAPIError as exc:
                     log.warning("match_ids failed for %s…: %s", puuid[:8], exc)
