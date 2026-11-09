@@ -35,6 +35,13 @@ static:
   cdragon_branch: "latest"    # or "pbe"
   languages: ["en_us", "zh_cn"]
 
+rounds:
+  # last_round → "stage-round" label. Stage 1 has `stage1_rounds` rounds; every later stage
+  # has `rounds_per_stage` (6 fights + carousel + PvE). Verify when a set changes structure.
+  # 回合号 → 阶段标签映射；赛季结构变化时需核对。
+  stage1_rounds: 4
+  rounds_per_stage: 7
+
 analysis:
   # M6 metrics defaults — see docs/03-metrics.md / 指标默认值，见 docs/03-metrics.md
   shrinkage_k: 30

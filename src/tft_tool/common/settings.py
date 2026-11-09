@@ -84,6 +84,18 @@ class StaticConfig(BaseModel):
     languages: list[str]
 
 
+class RoundsConfig(BaseModel):
+    stage1_rounds: int = 4
+    rounds_per_stage: int = 7
+
+    def label(self, last_round: int) -> tuple[int, int]:
+        """(stage, round) for a 1-based round counter. / 回合号转 (阶段, 小回合)。"""
+        if last_round <= self.stage1_rounds:
+            return 1, max(last_round, 1)
+        n = last_round - self.stage1_rounds - 1
+        return 2 + n // self.rounds_per_stage, n % self.rounds_per_stage + 1
+
+
 class AnalysisConfig(BaseModel):
     shrinkage_k: float = 30
     min_n_display: int = 50
@@ -109,6 +121,7 @@ class Config(BaseModel):
     set: SetConfig
     ingest: IngestConfig
     static: StaticConfig
+    rounds: RoundsConfig = RoundsConfig()
     analysis: AnalysisConfig
     paths: PathsConfig
 

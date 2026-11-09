@@ -63,6 +63,12 @@ def _register_subapps() -> None:
         app.add_typer(ingest_app, name="ingest", help="Match collection (M2) / 对局采集")
     except ImportError:
         pass
+    try:
+        from tft_tool.etl.cli import app as etl_app
+
+        app.add_typer(etl_app, name="etl", help="Raw JSON → DuckDB (M3) / 清洗建表")
+    except ImportError:
+        pass
 
 
 _register_subapps()
